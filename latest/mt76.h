@@ -13,7 +13,10 @@
 #include <linux/leds.h>
 #include <linux/usb.h>
 #include <linux/average.h>
+#include <linux/version.h>
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 19, 0)
 #include <linux/soc/airoha/airoha_offload.h>
+#endif
 #include <linux/soc/mediatek/mtk_wed.h>
 #include <net/mac80211.h>
 #include <net/page_pool/helpers.h>
@@ -718,8 +721,10 @@ struct mt76_mmio {
 	struct completion wed_reset;
 	struct completion wed_reset_complete;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 19, 0)
 	struct airoha_ppe_dev __rcu *ppe_dev;
 	struct airoha_npu __rcu *npu;
+#endif
 	phys_addr_t phy_addr;
 	int npu_type;
 };
@@ -1711,14 +1716,23 @@ static inline int mt76_npu_net_setup_tc(struct ieee80211_hw *hw,
 
 static inline bool mt76_npu_device_active(struct mt76_dev *dev)
 {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 19, 0)
 	return !!rcu_access_pointer(dev->mmio.npu);
+#else
+	return false;
+#endif
 }
 
 static inline bool mt76_ppe_device_active(struct mt76_dev *dev)
 {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 19, 0)
 	return !!rcu_access_pointer(dev->mmio.ppe_dev);
+#else
+	return false;
+#endif
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 19, 0)
 static inline int mt76_npu_send_msg(struct airoha_npu *npu, int ifindex,
 				    enum airoha_npu_wlan_set_cmd cmd,
 				    u32 val, gfp_t gfp)
@@ -1734,6 +1748,7 @@ static inline int mt76_npu_get_msg(struct airoha_npu *npu, int ifindex,
 	return airoha_npu_wlan_get_msg(npu, ifindex, cmd, val, sizeof(*val),
 				       gfp);
 }
+#endif
 
 static inline void mt76_testmode_reset(struct mt76_phy *phy, bool disable)
 {
