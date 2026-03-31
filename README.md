@@ -118,23 +118,11 @@ sudo insmod mt7921/mt7921-common.ko
 sudo insmod mt7921/mt7921e.ko
 ```
 
-To make WiFi persistent across reboots, create a startup script and a systemd service:
+To make WiFi persistent across reboots, use the provided files `mt7902-wifi.sh` and `mt7902-wifi.service` from this repository:
 
 ```bash
-# 1. Create the startup script
-sudo tee /usr/local/bin/mt7902-wifi.sh > /dev/null <<'EOF'
-#!/bin/bash
-rmmod mt7921e mt7921_common mt792x_lib mt76_connac_lib mt76 2>/dev/null
-
-modprobe cfg80211
-modprobe mac80211
-
-insmod /lib/modules/mt7902_custom/mt76.ko
-insmod /lib/modules/mt7902_custom/mt76-connac-lib.ko
-insmod /lib/modules/mt7902_custom/mt792x-lib.ko
-insmod /lib/modules/mt7902_custom/mt7921-common.ko
-insmod /lib/modules/mt7902_custom/mt7921e.ko
-EOF
+# 1. Copy and install the startup script
+sudo cp mt7902-wifi.sh /usr/local/bin/mt7902-wifi.sh
 sudo chmod +x /usr/local/bin/mt7902-wifi.sh
 
 # 2. Copy the compiled modules to a safe location
@@ -142,22 +130,8 @@ sudo mkdir -p /lib/modules/mt7902_custom
 sudo cp latest/*.ko /lib/modules/mt7902_custom/
 sudo cp latest/mt7921/*.ko /lib/modules/mt7902_custom/
 
-# 3. Create the systemd service
-sudo tee /etc/systemd/system/mt7902-wifi.service > /dev/null <<'EOF'
-[Unit]
-Description=Load custom MT7902 WiFi drivers
-After=network.target
-
-[Service]
-Type=oneshot
-ExecStart=/usr/local/bin/mt7902-wifi.sh
-RemainAfterExit=yes
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-# 4. Enable and start the service
+# 3. Install and enable the systemd service
+sudo cp mt7902-wifi.service /etc/systemd/system/mt7902-wifi.service
 sudo systemctl daemon-reload
 sudo systemctl enable mt7902-wifi.service
 sudo systemctl start mt7902-wifi.service
