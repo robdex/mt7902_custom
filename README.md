@@ -137,6 +137,40 @@ sudo systemctl enable mt7902-wifi.service
 sudo systemctl start mt7902-wifi.service
 ```
 
+### Reverting / Uninstalling
+
+To completely remove the custom drivers and restore the system to its original state:
+
+```bash
+# 1. Stop and disable the systemd service (if installed)
+sudo systemctl stop mt7902-wifi.service 2>/dev/null || true
+sudo systemctl stop mt7902.service 2>/dev/null || true
+sudo systemctl disable mt7902-wifi.service 2>/dev/null || true
+sudo systemctl disable mt7902.service 2>/dev/null || true
+sudo rm -f /etc/systemd/system/mt7902-wifi.service
+sudo rm -f /etc/systemd/system/mt7902.service
+sudo systemctl daemon-reload
+
+# 2. Remove the startup script
+sudo rm -f /usr/local/bin/mt7902-wifi.sh
+sudo rm -f /usr/local/bin/mt7902-setup.sh
+
+# 3. Unload the custom modules
+sudo rmmod mt7921e mt7921_common mt792x_lib mt76_connac_lib mt76 2>/dev/null || true
+
+# 4. Remove the custom modules directory
+sudo rm -rf /lib/modules/mt7902_custom
+
+# 5. Restore the original kernel modules
+sudo apt reinstall linux-modules-$(uname -r)
+
+# 6. Refresh module dependencies and reload the original driver
+sudo depmod -a
+sudo modprobe mt7921e
+```
+
+After step 6, the stock kernel driver will be active again.
+
 ### Kernel < 6.19 compatibility
 
 The `latest/` sources require kernel 6.19 or newer by default due to the Airoha NPU offloading header (`linux/soc/airoha/airoha_offload.h`). This repository includes a fix that guards that header behind a kernel version check, so compilation on kernels 6.17 and above is supported.
